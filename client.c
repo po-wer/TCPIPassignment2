@@ -153,85 +153,89 @@ void downloadFile(int sockfd){	//Client download file from Server
 }
 
 void sendFile(int sockfd){	//Client send file to Server
-
-	printf("Sending file to Server...");
-	char buff[256];
-	int n;
-	
-	//Setting directory
-	char path[256] = "/home/vemont93/Desktop/TCPIP/";
-	char file[256] = "/client/";
-    printf("\nPath: %s", path);
-	//Create directory if it does not exist
-	struct stat st = {0};
-	if(stat(path, &st) == -1){
-	  mkdir(path, 0700);
-	}
-	//Printing files that is available from the directory
-	printf("\nAvailable file: \n");
-	DIR *directory;
-	struct dirent *ent;
-	if((directory = opendir(path)) != NULL){
-	  while((ent = readdir(directory)) != NULL){
-		printf("%s", ent->d_name);
-	  }
-	  closedir(directory);
-	}
-	else{
-	  perror("ERROR");
-	  exit(0);
-	}
-	
-	//Selecting file to be sent to Server
-	char tempo[256];
-	printf("\nPlease enter the file name that you want to send: ");
-	fgets(tempo, 256, stdin);
-	char filename[256];
-	strcpy(filename, tempo); 
-	
-	if(filename != NULL){
-
-		//Sending the file name to Server
-		int datalen = strlen(tempo);
-		int tmp = htonl(datalen);
-		n = write(sockfd, (char*)&tmp, sizeof(tmp));
-		if(n < 0) error("ERROR writing to socket");
-		n = write(sockfd,tempo,datalen);
-		if (n < 0) error("ERROR writing to socket");
-	
-		char split[2] = "\n";
-	 	strtok(tempo, split);
-
-		strcat(path, filename);
-		printf("Sending %s to Server... ", tempo);
-		printf("\nDir: %s", path);
-	
-		FILE *fs = fopen(path, "rb");	//Read file
-		if(fs == NULL){
-		  printf("\nERROR: File not found.\n");
-		  perror("fopen");
-		  exit(0);
-		}
-		else{	//Sending file to Server
-		  bzero(buff, 256);
-		  int fs_block_sz;
-		  while((fs_block_sz = fread(buff, sizeof(char), 256, fs)) > 0){
-		    if(send(sockfd, buff, fs_block_sz, 0) < 0){
-			fprintf(stderr, "ERROR: Failed to send file. %d", errno);
-			break;
-		    }
-		    bzero(buff, 256);
-		  }
-		  printf("\nFile sent successfully!\n");
-		  fclose(fs);
-		}
-	}
-	else{
-		printf("\nERROR: Filename cannot be NULL");		
-		printf("\nERROR: Please try again later");
-		exit(0);
-	}
-		
+    
+    printf("Sending a file to server...");
+    char buff[256];
+    int n;
+    
+    //Setting directory
+    char dir[256] = "/home/vemont93/Desktop/TCPIP/";
+    char hostname[256];
+    gethostname(hostname, 255);
+    char file[256] = "Client/";
+    
+    
+    //Create directory if it does not exist
+    struct stat st = {0};
+    if(stat(dir, &st) == -1){
+        mkdir(dir, 0700);
+    }
+    
+    //Printing files that is available from the directory
+    printf("\nAvailable file: \n");
+    DIR *directory;
+    struct dirent *ent;
+    if((directory = opendir(dir)) != NULL){
+        while((ent = readdir(directory)) != NULL){
+            printf("%s", ent->d_name);
+        }
+        closedir(directory);
+    }
+    else{
+        perror("ERROR");
+        exit(0);
+    }
+    
+    //Selecting file to be sent to Server
+    char tempo[256];
+    printf("\nPlease enter the file name that you wish to send out: ");
+    fgets(tempo, 256, stdin);
+    char filename[256];
+    strcpy(filename, tempo);
+    
+    if(filename != NULL){
+        
+        //Sending the file name to Server
+        int datalen = strlen(tempo);
+        int tmp = htonl(datalen);
+        n = write(sockfd, (char*)&tmp, sizeof(tmp));
+        if(n < 0) error("ERROR writing to socket");
+        n = write(sockfd,tempo,datalen);
+        if (n < 0) error("ERROR writing to socket");
+        
+        char split[2] = "\n";
+        strtok(tempo, split);
+        
+        strcat(dir, filename);
+        printf("Sending %s to Server... ", tempo);
+        printf("\nDir: %s", dir);
+        
+        FILE *fs = fopen(dir, "rb");	//Read file
+        if(fs == NULL){
+            printf("\nERROR: File not found.\n");
+            perror("fopen");
+            exit(0);
+        }
+        else{	//Sending file to Server
+            bzero(buff, 256);
+            int fs_block_sz;
+            while((fs_block_sz = fread(buff, sizeof(char), 256, fs)) > 0){
+                if(send(sockfd, buff, fs_block_sz, 0) < 0){
+                    fprintf(stderr, "ERROR: Failed to send file. %d", errno);
+                    break;
+                }
+                bzero(buff, 256);
+            }
+            printf("\nFile sent successful !\n");
+            fclose(fs);
+        }
+    }
+    else{
+        printf("\nERROR: Filename cannot be NULL");		
+        printf("\nERROR: Please try again later");
+        exit(0);
+    }
+    
 }
 
 void deleteFile(int sockfd){	//Deleting file on client-site
